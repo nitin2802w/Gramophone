@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  background: #1a1108;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-app-region: drag;
+  font-family: Georgia, serif;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px; opacity: 0.045; pointer-events: none; z-index: 10;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(201,168,76,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.vinyl-wrap { position: relative; margin-bottom: 34px; animation: rise 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+.vinyl { width: 130px; height: 130px; border-radius: 50%; animation: spin 5s linear infinite;
+  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.85)) drop-shadow(0 0 30px rgba(201,168,76,0.07)); }
+.vinyl-body {
+  width: 130px; height: 130px; border-radius: 50%;
+  background: radial-gradient(circle, #1c140a 0%, #0e0b06 30%, #080604 70%, #050403 100%);
+  border: 1px solid rgba(201,168,76,0.1);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow:
+    inset 0 0 0 10px rgba(201,168,76,0.025), inset 0 0 0 20px rgba(0,0,0,0.25),
+    inset 0 0 0 32px rgba(201,168,76,0.018), inset 0 0 0 44px rgba(0,0,0,0.18),
+    inset 0 0 0 56px rgba(201,168,76,0.012);
+}
+.vinyl-label {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #2e1f0c, #1a1107);
+  border: 1px solid rgba(201,168,76,0.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.vinyl-spindle { width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #c9a84c, #8a6020); }
+.arm-hint {
+  position: absolute; top: 10px; right: -18px;
+  width: 3px; height: 65px;
+  background: linear-gradient(180deg, #8a6840, #5a4020);
+  border-radius: 2px; transform-origin: 50% 0%;
+  transform: rotate(18deg); opacity: 0.5;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100%{opacity:0.18} 50%{opacity:1} }
+
+.logo { font-size: 30px; letter-spacing: 10px; color: #c9a84c; text-transform: uppercase;
+  font-style: italic; margin-bottom: 6px; animation: fadein 0.7s 0.3s ease both; }
+.tagline { font-size: 9.5px; letter-spacing: 4.5px; color: #6a5428; text-transform: uppercase;
+  font-family: 'Courier New', monospace; margin-bottom: 36px; animation: fadein 0.7s 0.55s ease both; }
+
+.loader { display: flex; align-items: center; gap: 12px; animation: fadein 0.7s 0.8s ease both; }
+.dots { display: flex; gap: 7px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: #c9a84c; animation: pulse 1.4s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: 0.22s; }
+.dot:nth-child(3) { animation-delay: 0.44s; }
+
+.status-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 220px; }
+.status-text { font-size: 9px; letter-spacing: 2.5px; color: #7a6030;
+  font-family: 'Courier New', monospace; text-transform: uppercase; }
+.substatus { font-size: 8px; letter-spacing: 1px; color: #4a3818;
+  font-family: 'Courier New', monospace; max-width: 260px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+  <div class="vinyl-wrap">
+    <div class="vinyl">
+      <div class="vinyl-body">
+        <div class="vinyl-label"><div class="vinyl-spindle"></div></div>
+      </div>
+    </div>
+    <div class="arm-hint"></div>
+  </div>
+  <div class="logo">Gramophone</div>
+  <div class="tagline">Offline Music Player</div>
+  <div class="loader">
+    <div class="dots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="status-wrap">
+      <div class="status-text" id="msg">Starting engine</div>
+      <div class="substatus"  id="sub"></div>
+    </div>
+  </div>
+
+  <script>
+    // Called by main.js to forward Flask stdout lines to the splash
+    function updateSplashMsg(line) {
+      if (!line || line.startsWith('[')) {
+        // Show truncated log lines as substatus
+        const sub = document.getElementById('sub');
+        sub.textContent = line.length > 45 ? '…' + line.slice(-42) : line;
+      }
+    }
+
+    // Cycle through status messages
+    const stages = [
+      ['Starting engine',   ''],
+      ['Checking packages', 'This may take a moment on first run'],
+      ['Loading modules',   ''],
+      ['Warming up audio',  ''],
+      ['Almost ready',      ''],
+    ];
+    let i = 0;
+    const msgEl = document.getElementById('msg');
+    const subEl = document.getElementById('sub');
+    setInterval(() => {
+      i = (i + 1) % stages.length;
+      msgEl.textContent = stages[i][0];
+      if (stages[i][1]) subEl.textContent = stages[i][1];
+    }, 3000);
+  </script>
+</body>
+</html>
