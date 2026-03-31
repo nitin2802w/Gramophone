@@ -57,7 +57,7 @@ gramophone/
 ├── start.bat      ← Windows one-click launcher
 ├── start.sh       ← macOS/Linux one-click launcher
 └── assets/
-    └── icon.png   ← App icon (replace with your own 512×512 PNG)
+    └── icon.png   ← App icon 
 ```
 
 Songs are stored in `songs/<Playlist Name>/` next to the app files.
@@ -105,3 +105,9 @@ npm run build:linux   # → dist/Gramophone-1.0.0.AppImage
 | No audio on Linux | Run `pulseaudio --start` or check PipeWire |
 | Port 5001 conflict | Change `PORT = 5001` in `main.js` to another number |
 | yt-dlp download fails | Install ffmpeg: `brew install ffmpeg` / `winget install ffmpeg` / `sudo apt install ffmpeg` |
+
+
+##Limitations 
+1. if a playlist have more than 100 songs the first 100 songs will be downloaded
+2. if a song is sportify exclusive then it will not be downloaded
+
